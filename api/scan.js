@@ -1,3 +1,11 @@
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -6,8 +14,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { image } = req.body;
+  const { image, mediaType } = req.body;
   if (!image) return res.status(400).json({ error: 'No image provided' });
+
+  const imageMediaType = mediaType || 'image/png';
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -40,7 +50,7 @@ Be specific to what you see in the image. Find 6-10 flags total (mix of red and 
           content: [
             {
               type: 'image',
-              source: { type: 'base64', media_type: 'image/jpeg', data: image }
+              source: { type: 'base64', media_type: imageMediaType, data: image }
             },
             { type: 'text', text: 'Scan this conversation for red flags. Be specific about what you see. Return only JSON.' }
           ]
@@ -50,6 +60,7 @@ Be specific to what you see in the image. Find 6-10 flags total (mix of red and 
 
     if (!response.ok) {
       const err = await response.json();
+      console.error('Anthropic error:', JSON.stringify(err));
       return res.status(response.status).json({ error: err.error?.message || 'API error' });
     }
 
@@ -60,7 +71,7 @@ Be specific to what you see in the image. Find 6-10 flags total (mix of red and 
 
     res.status(200).json(parsed);
   } catch (err) {
-    console.error(err);
+    console.error('Handler error:', err);
     res.status(500).json({ error: 'Something went wrong' });
   }
 }
