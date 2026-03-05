@@ -17,7 +17,16 @@ export default async function handler(req, res) {
   const { image, mediaType } = req.body;
   if (!image) return res.status(400).json({ error: 'No image provided' });
 
-  const imageMediaType = mediaType || 'image/png';
+  // Detect actual image type from base64 header bytes
+  let detectedType = mediaType || 'image/jpeg';
+  try {
+    const header = Buffer.from(image.slice(0, 16), 'base64');
+    if (header[0] === 0x89 && header[1] === 0x50) detectedType = 'image/png';
+    else if (header[0] === 0xFF && header[1] === 0xD8) detectedType = 'image/jpeg';
+    else if (header[0] === 0x52 && header[1] === 0x49) detectedType = 'image/webp';
+    else if (header[0] === 0x47 && header[1] === 0x49) detectedType = 'image/gif';
+    // Default to jpeg if unknown - Anthropic supports jpeg, png, gif, webp
+  } catch(e) {}
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -50,7 +59,7 @@ Be specific to what you see in the image. Find 6-10 flags total (mix of red and 
           content: [
             {
               type: 'image',
-              source: { type: 'base64', media_type: imageMediaType, data: image }
+              source: { type: 'base64', media_type: detectedType, data: image }
             },
             { type: 'text', text: 'Scan this conversation for red flags. Be specific about what you see. Return only JSON.' }
           ]
