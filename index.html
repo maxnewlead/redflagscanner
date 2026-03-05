@@ -678,6 +678,7 @@
 
 <script>
   let imageBase64 = null;
+  let imageMediaType = 'image/png';
   let currentResults = null;
   let isPremium = false;
 
@@ -756,7 +757,7 @@
       const response = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: imageBase64 })
+        body: JSON.stringify({ image: imageBase64, mediaType: imageMediaType })
       });
 
       clearInterval(msgInterval);
