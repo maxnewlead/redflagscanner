@@ -656,7 +656,7 @@
       <div class="paywall-card">
         <div class="paywall-title">See the full picture 👀</div>
         <div class="paywall-sub">Your AI scan found more patterns. Unlock the complete report to see every flag, get a psychological profile, and receive actionable advice.</div>
-        <div class="paywall-price">49 kr</div>
+        <div class="paywall-price">$4.99</div>
         <div class="paywall-period">one-time unlock · no subscription</div>
         <ul class="paywall-features">
           <li>All red flags (+ green flags) revealed</li>
@@ -665,7 +665,7 @@
           <li>Manipulation tactics breakdown</li>
           <li>Should you reply? AI verdict</li>
         </ul>
-        <button class="paywall-btn" onclick="unlockPremium()">🔓 Unlock full report — 49 kr</button>
+        <button class="paywall-btn" onclick="unlockPremium()">🔓 Unlock full report — $4.99</button>
       </div>
     </div>
 
@@ -753,51 +753,20 @@
     }, 1800);
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: `You are RedFlagScanner, a brutally honest AI dating coach. Analyze screenshots of dating app conversations or text messages. Respond ONLY with valid JSON, no markdown, no backticks. Format:
-{
-  "score": <0-100, higher = more red flags>,
-  "verdict": "<short punchy 3-5 word verdict>",
-  "flags": [
-    {
-      "type": "red|green",
-      "title": "<flag name>",
-      "description": "<1-2 sentence explanation, specific to the conversation>"
-    }
-  ],
-  "totalFlags": <total count including hidden ones>
-}
-
-Be specific to what you see in the image. Find 6-10 flags total (mix of red and green). The first 3 in the array are free, rest are premium. Verdicts: "Run. Don't look back.", "Major red flags spotted", "Proceed with caution", "Some yellow flags", "Actually pretty wholesome", etc. Be witty and direct.`,
-          messages: [{
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 }
-              },
-              { type: 'text', text: 'Scan this conversation for red flags. Be specific about what you see. Return only JSON.' }
-            ]
-          }]
-        })
+        body: JSON.stringify({ image: imageBase64 })
       });
 
       clearInterval(msgInterval);
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error?.message || 'API error');
+        throw new Error(err.error || 'API error');
       }
 
-      const data = await response.json();
-      const text = data.content.map(b => b.text || '').join('');
-      const clean = text.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(clean);
+      const parsed = await response.json();
 
       currentResults = parsed;
       displayResults(parsed);
@@ -895,9 +864,7 @@ Be specific to what you see in the image. Find 6-10 flags total (mix of red and 
   }
 
   function unlockPremium() {
-    // This is where you'd integrate Stripe / payment
-    // For now: show a coming soon or redirect
-    alert('Payment integration coming soon! 💳\n\nTo add Stripe: replace this with a Stripe Checkout link.');
+    window.open('https://buy.stripe.com/3cIcN6f8Zak32Bk7ojdMI1K', '_blank');
   }
 
   function shareResult() {
